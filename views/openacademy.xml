@@ -92,6 +92,7 @@
             <field name="arch" type="xml">
                 <form string="Session Form">
                     <header>
+                        <!--修改状态的按钮-->
                         <button name="draft" type="workflow"
                                 string="Reset to draft"
                                 states="confirmed,done"/>
@@ -165,6 +166,7 @@
             </field>
         </record>
 
+        <!--graph视图-->
         <record model="ir.ui.view" id="openacademy_session_graph_view">
             <field name="name">openacademy.session.graph</field>
             <field name="model">openacademy.session</field>
@@ -176,6 +178,7 @@
             </field>
         </record>
 
+        <!--看板视图-->
         <record model="ir.ui.view" id="view_openacad_session_kanban">
             <field name="name">openacad.session.kanban</field>
             <field name="model">openacademy.session</field>
@@ -233,6 +236,7 @@
                   parent="openacademy_menu"
                   action="session_list_action"/>
 
+        <!--Add Attendees弹窗-->
         <record model="ir.ui.view" id="wizard_form_view">
             <field name="name">wizard.form</field>
             <field name="model">openacademy.wizard</field>

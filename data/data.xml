@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--尝试定制菜单，有图标，但跳转不对，跳转到了website模块-->
+    <data noupdate="1">
+        <record id="action_openacademy" model="ir.actions.act_url">
+            <field name="name">Openacademy</field>
+            <field name="url">/page/homepage</field>
+            <field name="target">self</field>
+        </record>
+        <!--<record id="action_openacademy_homepage" model="ir.actions.act_url">
+            <field name="name">Openacademy Homepage</field>
+            <field name="url">/page/homepage</field>
+            <field name="target">self</field>
+        </record>-->
+
+        <record id="menu_openacademy" model="ir.ui.menu">
+            <field name="name">Openacademy</field>
+            <field name="sequence" eval="200"/>
+            <field name="web_icon">openacademy,static/description/icon.png</field>
+            <field name="action" ref="action_openacademy"/>
+        </record>
+
+        <record id="base.open_menu" model="ir.actions.todo">
+            <field name="action_id" ref="action_openacademy"/>
+            <field name="state">open</field>
+        </record>
+    </data>
+</odoo>

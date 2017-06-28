@@ -7,8 +7,10 @@
         subtitle on modules listing or apps.openerp.com""",
 
     'description': """
-        Long description of module's purpose
+        Long description of module's purpose 1234
     """,
+    # 'description': 'description html', #  错误
+    # /static/description/index.html作为描述，覆盖上面的description
 
     'author': "My Company",
     'website': "http://www.yourcompany.com",
@@ -21,6 +23,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
+    # board是仪表板
     'depends': ['base', 'board'],
 
     # always loaded
@@ -34,6 +37,7 @@
         'views/session_workflow.xml',
         'views/session_board.xml',
         'reports.xml',
+        'data/data.xml'
     ],
     # only loaded in demonstration mode
     'demo': [

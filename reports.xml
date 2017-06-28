@@ -1,5 +1,6 @@
 <odoo>
 <data>
+    <!--pdf报告，报错-->
     <report
         id="report_session"
         model="openacademy.session"

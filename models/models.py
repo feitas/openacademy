@@ -3,6 +3,7 @@
 from datetime import timedelta
 from odoo import models, fields, api, exceptions
 
+# 课程
 class Course(models.Model):
     _name = 'openacademy.course'
 
@@ -10,13 +11,10 @@ class Course(models.Model):
 #     value = fields.Integer()
 #     value2 = fields.Float(compute="_value_pc", store=True)
     description = fields.Text()
-
+    # 责任人
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="Responsible", index=True)
-#
-#     @api.depends('value')
-#     def _value_pc(self):
-#         self.value2 = float(self.value) / 100
 
+    # 重写复制逻辑
     @api.multi
     def copy(self, default=None):
         default = dict(default or {})
@@ -31,6 +29,7 @@ class Course(models.Model):
         default['name'] = new_name
         return super(Course, self).copy(default)
 
+    # 不符合限制条件时阻止操作并给出警告
     _sql_constraints = [
         ('name_description_check',
          'CHECK(name != description)',
@@ -42,32 +41,38 @@ class Course(models.Model):
     ]
 
 
+# 学期
 class Session(models.Model):
     _name = 'openacademy.session'
 
     name = fields.Char(required=True)
     start_date = fields.Date(default=fields.Date.today)
+    # 持续天数
     duration = fields.Float(digits=(6, 2), help="Duration in days")
+    # 座位数
     seats = fields.Integer(string="Number of seats")
     active = fields.Boolean(default=True)
     color = fields.Integer()
-
+    # 教导员
     instructor_id = fields.Many2one('res.partner', string="Instructor",
         domain=['|', ('instructor', '=', True),
                      ('category_id.name', 'ilike', "Teacher")])
 
     # instructor_id = fields.Many2one('res.partner', string="Instructor")
+    # 学科
     course_id = fields.Many2one('openacademy.course',
         ondelete='cascade', string="Course", required=True)
+    # 参与者
     attendee_ids = fields.Many2many('res.partner', string="Attendees")
-
+    # 一预约人数占满额人数的比例
     taken_seats = fields.Float(string="Taken seats", compute='_taken_seats')
+    # 学期结束日期
     end_date = fields.Date(string="End Date", store=True,
         compute='_get_end_date', inverse='_set_end_date')
-
+    # 小时数
     hours = fields.Float(string="Duration in hours",
                          compute='_get_hours', inverse='_set_hours')
-
+    # 已参加/预约人数
     attendees_count = fields.Integer(
         string="Attendees count", compute='_get_attendees_count', store=True)
 
@@ -77,6 +82,7 @@ class Session(models.Model):
         ('done', "Done"),
     ])
 
+    # 设置状态：draft confirmed done
     @api.multi
     def action_draft(self):
         self.state = 'draft'
@@ -89,6 +95,7 @@ class Session(models.Model):
     def action_done(self):
         self.state = 'done'
 
+    # 根据参与者计算已被预约的席位的比例
     @api.depends('seats', 'attendee_ids')
     def _taken_seats(self):
         for r in self:
@@ -97,6 +104,7 @@ class Session(models.Model):
             else:
                 r.taken_seats = 100.0 * len(r.attendee_ids) / r.seats
 
+    # 'seats'和'attendee_ids'变化时执行
     @api.onchange('seats', 'attendee_ids')
     def _verify_valid_seats(self):
         if self.seats < 0:
@@ -114,6 +122,7 @@ class Session(models.Model):
                 },
             }
 
+    # start_date和duration发生变化时触发函数
     @api.depends('start_date', 'duration')
     def _get_end_date(self):
         for r in self:
@@ -155,5 +164,6 @@ class Session(models.Model):
     @api.constrains('instructor_id', 'attendee_ids')
     def _check_instructor_not_in_attendees(self):
         for r in self:
+            # 导师不能同时是这个课的学生
             if r.instructor_id and r.instructor_id in r.attendee_ids:
                 raise exceptions.ValidationError("A session's instructor can't be an attendee")
