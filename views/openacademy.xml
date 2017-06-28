@@ -71,7 +71,11 @@
         </record>
 
         <!-- top level menu: no parent -->
-        <menuitem id="main_openacademy_menu" name="Open Academy"/>
+        <!--<menuitem id="main_openacademy_menu" name="Open Academy"/>-->
+        <!-- 添加图标 -->
+        <menuitem name="Open Academy"
+            id="main_openacademy_menu"
+            web_icon="openacademy,static/description/icon.png"/>
         <!-- A first level in the left side menu is needed
              before using action= attribute -->
         <menuitem id="openacademy_menu" name="Open Academy"

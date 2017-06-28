@@ -36,6 +36,7 @@
         'views/partner.xml',
         'views/session_workflow.xml',
         'views/session_board.xml',
+        'views/openacademy_views.xml',
         'reports.xml',
         'data/data.xml'
     ],
