@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import timedelta
-from odoo import models, fields, api, exceptions
+from odoo import models, fields, api, exceptions, _
 
 # 课程
 class Course(models.Model):
@@ -61,20 +61,20 @@ class Session(models.Model):
     # instructor_id = fields.Many2one('res.partner', string="Instructor")
     # 学科
     course_id = fields.Many2one('openacademy.course',
-        ondelete='cascade', string="Course", required=True)
+        ondelete='cascade', string="科目", required=True)
     # 参与者
-    attendee_ids = fields.Many2many('res.partner', string="Attendees")
+    attendee_ids = fields.Many2many('res.partner', string="参与者")
     # 一预约人数占满额人数的比例
-    taken_seats = fields.Float(string="Taken seats", compute='_taken_seats')
+    taken_seats = fields.Float(string="已分配席位", compute='_taken_seats')
     # 学期结束日期
-    end_date = fields.Date(string="End Date", store=True,
+    end_date = fields.Date(string="结束日期", store=True,
         compute='_get_end_date', inverse='_set_end_date')
     # 小时数
-    hours = fields.Float(string="Duration in hours",
+    hours = fields.Float(string="小时数",
                          compute='_get_hours', inverse='_set_hours')
     # 已参加/预约人数
     attendees_count = fields.Integer(
-        string="Attendees count", compute='_get_attendees_count', store=True)
+        string="已参加人数", compute='_get_attendees_count', store=True)
 
     state = fields.Selection([
         ('draft', "Draft"),
@@ -111,14 +111,14 @@ class Session(models.Model):
             return {
                 'warning': {
                     'title': "Incorrect 'seats' value",
-                    'message': "The number of available seats may not be negative",
+                    'message': _("The number of available seats may not be negative"),
                 },
             }
         if self.seats < len(self.attendee_ids):
             return {
                 'warning': {
                     'title': "Too many attendees",
-                    'message': "Increase seats or remove excess attendees",
+                    'message': _("Increase seats or remove excess attendees"),
                 },
             }
 
