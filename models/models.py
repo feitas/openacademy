@@ -7,12 +7,10 @@ from odoo import models, fields, api, exceptions, _
 class Course(models.Model):
     _name = 'openacademy.course'
 
-    name = fields.Char(string="Title", required=True)
-#     value = fields.Integer()
-#     value2 = fields.Float(compute="_value_pc", store=True)
-    description = fields.Text()
+    name = fields.Char(string="名称", required=True)
+    description = fields.Html(string="简介")
     # 责任人
-    responsible_id = fields.Many2one('res.users', ondelete='set null', string="Responsible", index=True)
+    responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
 
     # 重写复制逻辑
     @api.multi
@@ -33,11 +31,11 @@ class Course(models.Model):
     _sql_constraints = [
         ('name_description_check',
          'CHECK(name != description)',
-         "The title of the course should not be the description"),
+         "科目名和简介不能相同"),
 
         ('name_unique',
          'UNIQUE(name)',
-         "The course title must be unique"),
+         "科目名重复"),
     ]
 
 
@@ -45,16 +43,16 @@ class Course(models.Model):
 class Session(models.Model):
     _name = 'openacademy.session'
 
-    name = fields.Char(required=True)
-    start_date = fields.Date(default=fields.Date.today)
+    name = fields.Char(string="名称", required=True)
+    start_date = fields.Date(string="开始日期", default=fields.Date.today)
     # 持续天数
-    duration = fields.Float(digits=(6, 2), help="Duration in days")
+    duration = fields.Float(digits=(6, 2), help="持续天数")
     # 座位数
-    seats = fields.Integer(string="Number of seats")
-    active = fields.Boolean(default=True)
+    seats = fields.Integer(string="座位数")
+    active = fields.Boolean(string="有效", default=True)
     color = fields.Integer()
     # 教导员
-    instructor_id = fields.Many2one('res.partner', string="Instructor",
+    instructor_id = fields.Many2one('res.partner', string="教导员",
         domain=['|', ('instructor', '=', True),
                      ('category_id.name', 'ilike', "Teacher")])
 
@@ -65,7 +63,7 @@ class Session(models.Model):
     # 参与者
     attendee_ids = fields.Many2many('res.partner', string="参与者")
     # 一预约人数占满额人数的比例
-    taken_seats = fields.Float(string="已分配席位", compute='_taken_seats')
+    taken_seats = fields.Float(string="已分配座位", compute='_taken_seats')
     # 学期结束日期
     end_date = fields.Date(string="结束日期", store=True,
         compute='_get_end_date', inverse='_set_end_date')
@@ -111,13 +109,14 @@ class Session(models.Model):
             return {
                 'warning': {
                     'title': "Incorrect 'seats' value",
-                    'message': _("The number of available seats may not be negative"),
+                    'message':"座位数不能小于零",
                 },
             }
         if self.seats < len(self.attendee_ids):
             return {
                 'warning': {
                     'title': "Too many attendees",
+                    # 翻译--改po文件无效
                     'message': _("Increase seats or remove excess attendees"),
                 },
             }
@@ -166,4 +165,4 @@ class Session(models.Model):
         for r in self:
             # 导师不能同时是这个课的学生
             if r.instructor_id and r.instructor_id in r.attendee_ids:
-                raise exceptions.ValidationError("A session's instructor can't be an attendee")
+                raise exceptions.ValidationError("教导员不能同时是参与者")
