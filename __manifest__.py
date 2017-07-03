@@ -13,19 +13,19 @@
     # 'description': 'description html', #  错误
     # /static/description/index.html作为描述，覆盖上面的description
 
-    'author': "My Company",
-    'website': "http://www.yourcompany.com",
+    'author': "作者Salman",
+    'website': "http://www.asdf.com",
 
     # Categories can be used to filter modules in modules listing
     # Check https://github.com/odoo/odoo/blob/master/odoo/addons/base/module/module_data.xml
     # for the full list
     # 'category': 'Uncategorized',
-    'category': 'Test',
-    'version': '0.1',
+    'category': '我的模块',
+    'version': '0.2',
 
     # any module necessary for this one to work correctly
     # board是仪表板
-    'depends': ['base', 'board'],
+    'depends': ['base', 'board', 'mail'],
 
     # always loaded
     'data': [

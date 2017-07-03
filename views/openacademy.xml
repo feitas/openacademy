@@ -32,7 +32,7 @@
                             <page string="Description">
                                 <field name="description"/>
                             </page>
-                            <page string="About">
+                            <page string="关于">
                                 This is an example of notebooks
                             </page>
                         </notebook>
@@ -48,7 +48,7 @@
                 <search>
                     <field name="name"/>
                     <field name="description"/>
-                    <filter name="my_courses" string="My Courses"
+                    <filter name="my_courses" string="我的课程"
                             domain="[('responsible_id', '=', uid)]"/>
                     <group string="Group By">
                         <filter name="by_responsible" string="Responsible"
@@ -98,13 +98,13 @@
                     <header>
                         <!--修改状态的按钮-->
                         <button name="draft" type="workflow"
-                                string="Reset to draft"
+                                string="重设为草稿"
                                 states="confirmed,done"/>
                         <button name="confirm" type="workflow"
-                                string="Confirm" states="draft"
+                                string="确认" states="draft"
                                 class="oe_highlight"/>
                         <button name="done" type="workflow"
-                                string="Mark as done" states="confirmed"
+                                string="标记为完成" states="confirmed"
                                 class="oe_highlight"/>
                         <field name="state" widget="statusbar"/>
                     </header>
@@ -117,7 +117,7 @@
                                 <field name="instructor_id"/>
                                 <field name="active"/>
                             </group>
-                            <group string="Schedule">
+                            <group string="安排">
                                 <field name="start_date"/>
                                 <field name="duration"/>
                                 <field name="seats"/>
@@ -127,6 +127,10 @@
                         <label for="attendee_ids"/>
                         <field name="attendee_ids"/>
                     </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers"/>
+                        <field name="message_ids" widget="mail_thread"/>
+                    </div>
                 </form>
             </field>
         </record>
@@ -245,7 +249,7 @@
             <field name="name">wizard.form</field>
             <field name="model">openacademy.wizard</field>
             <field name="arch" type="xml">
-                <form string="Add Attendees">
+                <form string="添加参与者">
                     <group>
                         <field name="session_ids"/>
                         <field name="attendee_ids"/>

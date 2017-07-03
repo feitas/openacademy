@@ -42,11 +42,12 @@ class Course(models.Model):
 # 学期
 class Session(models.Model):
     _name = 'openacademy.session'
+    _inherit = ['mail.thread', 'ir.needaction_mixin']
 
     name = fields.Char(string="名称", required=True)
     start_date = fields.Date(string="开始日期", default=fields.Date.today)
     # 持续天数
-    duration = fields.Float(digits=(6, 2), help="持续天数")
+    duration = fields.Float(digits=(6, 2), string="持续天数")
     # 座位数
     seats = fields.Integer(string="座位数")
     active = fields.Boolean(string="有效", default=True)
@@ -62,7 +63,7 @@ class Session(models.Model):
         ondelete='cascade', string="科目", required=True)
     # 参与者
     attendee_ids = fields.Many2many('res.partner', string="参与者")
-    # 一预约人数占满额人数的比例
+    # 已预约人数占满额人数的比例
     taken_seats = fields.Float(string="已分配座位", compute='_taken_seats')
     # 学期结束日期
     end_date = fields.Date(string="结束日期", store=True,
