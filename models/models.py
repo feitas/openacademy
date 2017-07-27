@@ -12,9 +12,9 @@ class Course(models.Model):
     # 责任人
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
 
-    # 重写复制逻辑
     @api.multi
     def copy(self, default=None):
+        # 重写复制逻辑
         default = dict(default or {})
 
         copied_count = self.search_count(
@@ -76,27 +76,30 @@ class Session(models.Model):
         string="已参加人数", compute='_get_attendees_count', store=True)
 
     state = fields.Selection([
-        ('draft', "Draft"),
-        ('confirmed', "Confirmed"),
-        ('done', "Done"),
+        ('draft', "草稿"),
+        ('confirmed', "已确认"),
+        ('done', "完成"),
     ])
 
     # 设置状态：draft confirmed done
     @api.multi
     def action_draft(self):
+        # 学期的状态设为draft
         self.state = 'draft'
 
     @api.multi
     def action_confirm(self):
+        # 学期的状态设为confirmed
         self.state = 'confirmed'
 
     @api.multi
     def action_done(self):
+        # 学期的状态设为done
         self.state = 'done'
 
-    # 根据参与者计算已被预约的席位的比例
     @api.depends('seats', 'attendee_ids')
     def _taken_seats(self):
+        # 根据参与者计算已被预约的席位的比例
         for r in self:
             if not r.seats:
                 r.taken_seats = 0.0
@@ -106,6 +109,7 @@ class Session(models.Model):
     # 'seats'和'attendee_ids'变化时执行
     @api.onchange('seats', 'attendee_ids')
     def _verify_valid_seats(self):
+        # 特定条件下显示警告
         if self.seats < 0:
             return {
                 'warning': {
@@ -125,6 +129,7 @@ class Session(models.Model):
     # start_date和duration发生变化时触发函数
     @api.depends('start_date', 'duration')
     def _get_end_date(self):
+        # 计算截止日期
         for r in self:
             if not (r.start_date and r.duration):
                 r.end_date = r.start_date
@@ -137,6 +142,7 @@ class Session(models.Model):
             r.end_date = start + duration
 
     def _set_end_date(self):
+        # 计算持续天数
         for r in self:
             if not (r.start_date and r.end_date):
                 continue
@@ -149,15 +155,18 @@ class Session(models.Model):
 
     @api.depends('duration')
     def _get_hours(self):
+        # 计算小时数
         for r in self:
             r.hours = r.duration * 24
 
     def _set_hours(self):
+        # 计算天数
         for r in self:
             r.duration = r.hours / 24
 
     @api.depends('attendee_ids')
     def _get_attendees_count(self):
+        # 计算参与人数
         for r in self:
             r.attendees_count = len(r.attendee_ids)
 

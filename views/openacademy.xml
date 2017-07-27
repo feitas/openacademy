@@ -29,7 +29,7 @@
                             <field name="responsible_id"/>
                         </group>
                         <notebook>
-                            <page string="Description">
+                            <page string="描述">
                                 <field name="description"/>
                             </page>
                             <page string="关于">

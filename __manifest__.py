@@ -13,7 +13,7 @@
     # 'description': 'description html', #  错误
     # /static/description/index.html作为描述，覆盖上面的description
 
-    'author': "作者Salman",
+    'author': "Salman",
     'website': "http://www.asdf.com",
 
     # Categories can be used to filter modules in modules listing
