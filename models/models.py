@@ -16,12 +16,13 @@ class Course(models.Model):
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
     # 当前登录用户
     current_user = fields.Integer(default = 0, compute = 'who')
-    # _logger.info(self.env.uid)
+    TARO_id = fields.Many2one('res.users', ondelete='set null', string="教研室主任", index=True)
+    dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True)
 
     def who(self):
-        _logger.info("user-----")
-        _logger.info(self.env.user)
-        _logger.info("---------uid:" + str(self.env.uid))
+        # _logger.info("user-----")
+        # _logger.info(self.env.user)
+        # _logger.info("---------uid:" + str(self.env.uid))
         for r in self:
             _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
             _logger.info(r.current_user)
@@ -49,27 +50,49 @@ class Course(models.Model):
     @api.multi
     def action_submit_for_examine(self):
         # 提交审核
-        self.state = 'unexamined_TARO'
+        # 获取记录的创建者
+        # _logger.info('------create_uid.id-------')
+        # _logger.info(self.create_uid.id)
+        # _logger.info(self.create_uid.name)
+        if self.env.user.id == self.create_uid.id:
+            self.state = 'unexamined_TARO'
+        else:
+            raise exceptions.ValidationError("抱歉，您不是本课程的创建人，不能提交审核")
 
     @api.multi
     def action_examine_TARO_permit(self):
         # 教研室主任审核通过
         self.state = 'unexamined_dean'
+        if self.env.user.id == self.TARO_id.id:
+            self.state = 'unexamined_dean'
+        else:
+            raise exceptions.ValidationError("只有教研室主任才能审批")
+
 
     @api.multi
     def action_examine_TARO_reject(self):
         # 教研室主任审核驳回
-        self.state = 'draft'
+        self.state = 'unexamined_dean'
+        if self.env.user.id == self.TARO_id.id:
+            self.state = 'draft'
+        else:
+            raise exceptions.ValidationError("只有教研室主任才能审批")
 
     @api.multi
     def action_examine_dean_permit(self):
         # 院长审批通过
-        self.state = 'passed'
+        if self.env.user.id == self.dean_id.id:
+            self.state = 'passed'
+        else:
+            raise exceptions.ValidationError("只有院长才能审批")
 
     @api.multi
     def action_examine_dean_reject(self):
         # 院长审批驳回
-        self.state = 'draft'
+        if self.env.user.id == self.dean_id.id:
+            self.state = 'draft'
+        else:
+            raise exceptions.ValidationError("只有院长才能审批")
 
     @api.multi
     def copy(self, default=None):
