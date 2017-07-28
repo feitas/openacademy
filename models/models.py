@@ -3,6 +3,7 @@
 import logging
 from datetime import timedelta
 from odoo import models, fields, api, exceptions
+from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -14,29 +15,31 @@ class Course(models.Model):
     description = fields.Html(string="简介")
     # 责任人
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
-    # 当前登录用户
-    current_user = fields.Integer(default = 0, compute = 'who')
     TARO_id = fields.Many2one('res.users', ondelete='set null', string="教研室主任", index=True)
     dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True)
+    
+    # 当前登录用户
+    current_user = fields.Integer(default = 0, compute = 'who')
 
     def who(self):
+        pass
         # _logger.info("user-----")
         # _logger.info(self.env.user)
         # _logger.info("---------uid:" + str(self.env.uid))
-        for r in self:
-            _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
-            _logger.info(r.current_user)
-            # 用户是课程负责人
-            if r.responsible_id.id == self.env.uid and self.env.uid != 1:
-                r.current_user = 1
-            # elif r.responsible_id.id == self.env.uid and self.env.uid == 1:
-            #     r.current_user = 4
-            # 教研室主任登录
-            elif self.env.user.partner_id.position == "TARO":
-                r.current_user = 2
-            # 院长登录
-            elif self.env.user.partner_id.position == "dean":
-                r.current_user = 3
+        # for r in self:
+        #     _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
+        #     _logger.info(r.current_user)
+        #     # 用户是课程负责人
+        #     if r.responsible_id.id == self.env.uid and self.env.uid != 1:
+        #         r.current_user = 1
+        #     # elif r.responsible_id.id == self.env.uid and self.env.uid == 1:
+        #     #     r.current_user = 4
+        #     # 教研室主任登录
+        #     elif self.env.user.partner_id.position == "TARO":
+        #         r.current_user = 2
+        #     # 院长登录
+        #     elif self.env.user.partner_id.position == "dean":
+        #         r.current_user = 3
 
         # _logger.info("---------current_user:" + str(current_user))
 
@@ -54,45 +57,40 @@ class Course(models.Model):
         # _logger.info('------create_uid.id-------')
         # _logger.info(self.create_uid.id)
         # _logger.info(self.create_uid.name)
-        if self.env.user.id == self.create_uid.id:
-            self.state = 'unexamined_TARO'
-        else:
-            raise exceptions.ValidationError("抱歉，您不是本课程的创建人，不能提交审核")
+        if self.env.user.id != self.create_uid.id:
+            raise ValidationError("抱歉，您不是本课程的创建人，不能提交审核")
+        self.state = 'unexamined_TARO'
 
     @api.multi
     def action_examine_TARO_permit(self):
         # 教研室主任审核通过
         self.state = 'unexamined_dean'
-        if self.env.user.id == self.TARO_id.id:
-            self.state = 'unexamined_dean'
-        else:
-            raise exceptions.ValidationError("只有教研室主任才能审批")
+        if self.env.user.id != self.TARO_id.id:
+            raise ValidationError("只有教研室主任才能审批")
+        self.state = 'unexamined_dean'
 
 
     @api.multi
     def action_examine_TARO_reject(self):
         # 教研室主任审核驳回
         self.state = 'unexamined_dean'
-        if self.env.user.id == self.TARO_id.id:
-            self.state = 'draft'
-        else:
-            raise exceptions.ValidationError("只有教研室主任才能审批")
+        if self.env.user.id != self.TARO_id.id:
+            raise ValidationError("只有教研室主任才能审批")
+        self.state = 'draft'
 
     @api.multi
     def action_examine_dean_permit(self):
         # 院长审批通过
-        if self.env.user.id == self.dean_id.id:
-            self.state = 'passed'
-        else:
-            raise exceptions.ValidationError("只有院长才能审批")
+        if self.env.user.id != self.dean_id.id:
+            raise ValidationError("只有院长才能审批")
+        self.state = 'passed'
 
     @api.multi
     def action_examine_dean_reject(self):
         # 院长审批驳回
-        if self.env.user.id == self.dean_id.id:
-            self.state = 'draft'
-        else:
-            raise exceptions.ValidationError("只有院长才能审批")
+        if self.env.user.id != self.dean_id.id:
+            raise ValidationError("只有院长才能审批")
+        self.state = 'draft'
 
     @api.multi
     def copy(self, default=None):
@@ -256,4 +254,4 @@ class Session(models.Model):
         for r in self:
             # 导师不能同时是这个课的学生
             if r.instructor_id and r.instructor_id in r.attendee_ids:
-                raise exceptions.ValidationError("教导员不能同时是参与者")
+                raise ValidationError("教导员不能同时是参与者")
