@@ -12,6 +12,7 @@
                         <group>
                             <field name="instructor"/>
                             <field name="session_ids"/>
+                            <field name="position"/>
                         </group>
                     </page>
                 </notebook>

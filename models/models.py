@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from datetime import timedelta
-from odoo import models, fields, api, exceptions, _
+from odoo import models, fields, api, exceptions
+
+_logger = logging.getLogger(__name__)
 
 # 课程
 class Course(models.Model):
@@ -11,6 +14,62 @@ class Course(models.Model):
     description = fields.Html(string="简介")
     # 责任人
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
+    # 当前登录用户
+    current_user = fields.Integer(default = 0, compute = 'who')
+    # _logger.info(self.env.uid)
+
+    def who(self):
+        _logger.info("user-----")
+        _logger.info(self.env.user)
+        _logger.info("---------uid:" + str(self.env.uid))
+        for r in self:
+            _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
+            _logger.info(r.current_user)
+            # 用户是课程负责人
+            if r.responsible_id.id == self.env.uid and self.env.uid != 1:
+                r.current_user = 1
+            # elif r.responsible_id.id == self.env.uid and self.env.uid == 1:
+            #     r.current_user = 4
+            # 教研室主任登录
+            elif self.env.user.partner_id.position == "TARO":
+                r.current_user = 2
+            # 院长登录
+            elif self.env.user.partner_id.position == "dean":
+                r.current_user = 3
+
+        # _logger.info("---------current_user:" + str(current_user))
+
+    state = fields.Selection([
+        ('draft', "草稿"),
+        ('unexamined_TARO', "待教研室审核"),
+        ('unexamined_dean', "待院长审批"),
+        ('passed', "审批通过")
+    ], default = 'draft')
+
+    @api.multi
+    def action_submit_for_examine(self):
+        # 提交审核
+        self.state = 'unexamined_TARO'
+
+    @api.multi
+    def action_examine_TARO_permit(self):
+        # 教研室主任审核通过
+        self.state = 'unexamined_dean'
+
+    @api.multi
+    def action_examine_TARO_reject(self):
+        # 教研室主任审核驳回
+        self.state = 'draft'
+
+    @api.multi
+    def action_examine_dean_permit(self):
+        # 院长审批通过
+        self.state = 'passed'
+
+    @api.multi
+    def action_examine_dean_reject(self):
+        # 院长审批驳回
+        self.state = 'draft'
 
     @api.multi
     def copy(self, default=None):
@@ -37,7 +96,6 @@ class Course(models.Model):
          'UNIQUE(name)',
          "科目名重复"),
     ]
-
 
 # 学期
 class Session(models.Model):

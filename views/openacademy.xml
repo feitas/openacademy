@@ -23,10 +23,21 @@
             <field name="model">openacademy.course</field>
             <field name="arch" type="xml">
                 <form string="Course Form">
+                    <header>
+                        <button string ="提交审核" type="object" name="action_submit_for_examine" class="oe_highlight" attrs="{'invisible':[ '|', ('current_user','!=',1), ('state','!=','draft')]}"/>
+                        <!--教研室主任审核-->
+                        <button string ="主任-通过" type="object" name="action_examine_TARO_permit" class="oe_highlight" attrs="{'invisible':['|', ('current_user','!=',2), ('state','!=','unexamined_TARO')]}"/>
+                        <button string ="主任-驳回" type="object" name="action_examine_TARO_reject" class="oe_highlight" attrs="{'invisible':['|', ('current_user','!=',2), ('state','!=','unexamined_TARO')]}"/>
+                        <!--院长审批-->
+                        <button string ="通过" type="object" name="action_examine_dean_permit" class="oe_highlight" attrs="{'invisible':['|', ('current_user','!=',3), ('state','!=','unexamined_dean')]}"/>
+                        <button string ="驳回" type="object" name="action_examine_dean_reject" class="oe_highlight" attrs="{'invisible':['|', ('current_user','!=',3), ('state','!=','unexamined_dean')]}"/>
+                        <field name="state" widget="statusbar"/>
+                    </header>
                     <sheet>
                         <group>
                             <field name="name"/>
                             <field name="responsible_id"/>
+                            <field name="current_user"/>
                         </group>
                         <notebook>
                             <page string="描述">
