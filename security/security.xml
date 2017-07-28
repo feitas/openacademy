@@ -5,22 +5,22 @@
             <field name="sequence">30</field>
         </record>
 
-        <record id="group_TAR" model="res.groups">
+        <record id="group_tar" model="res.groups">
             <field name="name">教研员</field>
             <field name="category_id" ref="module_openacademy_category"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
         </record>
 
-        <record id="group_TARO" model="res.groups">
+        <record id="group_taro" model="res.groups">
             <field name="name">教研室主任</field>
             <field name="category_id" ref="module_openacademy_category"/>
-            <field name="implied_ids" eval="[(4, ref('openacademy.group_TAR'))]"/>
+            <field name="implied_ids" eval="[(4, ref('openacademy.group_tar'))]"/>
         </record>
 
         <record id="group_manager" model="res.groups">
             <field name="name">院长</field>
             <field name="category_id" ref="module_openacademy_category"/>
-            <field name="implied_ids" eval="[(4, ref('openacademy.group_TARO'))]"/>
+            <field name="implied_ids" eval="[(4, ref('openacademy.group_taro'))]"/>
         </record>
 
         <!--<record id="only_responsible_can_modify" model="ir.rule">
@@ -31,16 +31,106 @@
             <field name="perm_write" eval="1"/>
             <field name="perm_create" eval="0"/>
             <field name="perm_unlink" eval="1"/>
+        </record>-->
+
+        <!--普通用户对创建人或负责人是自己的课程有所有权限-->
+        <record id="base_user_own_his_Course" model="ir.rule">
+            <field name="name">base user can create Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+            <field name="domain_force">
+                [('responsible_id','=',user.id)]
+            </field>
         </record>
 
-        <record id="TARO_can_modify_Course" model="ir.rule">
-            <field name="name">TARO can modify Course</field>
+        <!--普通用户能浏览负责人不是自己的课程-->
+        <record id="base_user_can_read_others_Course" model="ir.rule">
+            <field name="name">base user can read other's Course</field>
             <field name="model_id" ref="model_openacademy_course"/>
-            <field name="groups" eval="[(4, ref('openacademy.group_TARO'))]"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                ['|',('responsible_id','!=',user.id),
+                ('responsible_id','=',False)]
+            </field>
+        </record>
+
+        <!--主任和院长对负责人是自己的课程有所有权限-->
+        <record id="taro_own_his_Course" model="ir.rule">
+            <field name="name">taro can modify Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('openacademy.group_taro'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+            <field name="domain_force">
+                [('responsible_id','=',user.id)]
+            </field>
+        </record>
+
+        <!--主任和院长可以浏览所有课程-->
+        <record id="taro_can_read_all_Course" model="ir.rule">
+            <field name="name">taro can modify Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('openacademy.group_taro'), ref('openacademy.group_manager'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                []
+            </field>
+        </record>
+
+        <!--主任和院长可以修改需要自己审批的课程-->
+        <record id="taro_can_modify_Course" model="ir.rule">
+            <field name="name">taro can modify Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('openacademy.group_taro'), ref('openacademy.group_manager'))]"/>
             <field name="perm_read" eval="0"/>
             <field name="perm_write" eval="1"/>
             <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                ['|', ('taro_id','=',user.id),
+                      ('dean_id','=',user.id)]
+            </field>
+        </record>
+
+        <!--<record id="taro_can_modify_Course" model="ir.rule">
+            <field name="name">taro can modify Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('openacademy.group_taro'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
             <field name="perm_unlink" eval="1"/>
+            <field name="domain_force">
+                ['|', ('taro_id','=',user.id),
+                      ('dean_id','=',user.id)]
+            </field>
+        </record>-->
+
+        <!--<record id="taro_can_modify_Course" model="ir.rule">
+            <field name="name">taro can modify Course</field>
+            <field name="model_id" ref="model_openacademy_course"/>
+            <field name="groups" eval="[(4, ref('openacademy.group_taro'))]"/>
+            <field name="perm_read" eval="0"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                [('taro_id','!=',user.id),
+                      ('dean_id','!=',user.id)]
+            </field>
         </record>-->
     </data>
 </odoo>

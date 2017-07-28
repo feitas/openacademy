@@ -10,7 +10,7 @@ class Partner(models.Model):
     # instructors
     instructor = fields.Boolean("Instructor", default=False)
     position = fields.Selection([
-        ('TARO', "教研室主任"),
+        ('taro', "教研室主任"),
         ('dean', "院长")
     ], string="职位", default=False)
 

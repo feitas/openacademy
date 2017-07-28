@@ -15,8 +15,8 @@ class Course(models.Model):
     description = fields.Html(string="简介")
     # 责任人
     responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
-    TARO_id = fields.Many2one('res.users', ondelete='set null', string="教研室主任", index=True)
-    dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True)
+    taro_id = fields.Many2one('res.users', ondelete='set null', string="教研室主任", index=True, required=True)
+    dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True, required=True)
     
     # 当前登录用户
     current_user = fields.Integer(default = 0, compute = 'who')
@@ -35,7 +35,7 @@ class Course(models.Model):
         #     # elif r.responsible_id.id == self.env.uid and self.env.uid == 1:
         #     #     r.current_user = 4
         #     # 教研室主任登录
-        #     elif self.env.user.partner_id.position == "TARO":
+        #     elif self.env.user.partner_id.position == "taro":
         #         r.current_user = 2
         #     # 院长登录
         #     elif self.env.user.partner_id.position == "dean":
@@ -45,7 +45,7 @@ class Course(models.Model):
 
     state = fields.Selection([
         ('draft', "草稿"),
-        ('unexamined_TARO', "待教研室审核"),
+        ('unexamined_taro', "待教研室审核"),
         ('unexamined_dean', "待院长审批"),
         ('passed', "审批通过")
     ], default = 'draft')
@@ -59,38 +59,42 @@ class Course(models.Model):
         # _logger.info(self.create_uid.name)
         if self.env.user.id != self.create_uid.id:
             raise ValidationError("抱歉，您不是本课程的创建人，不能提交审核")
-        self.state = 'unexamined_TARO'
+        self.state = 'unexamined_taro'
 
     @api.multi
-    def action_examine_TARO_permit(self):
+    def action_examine_taro_permit(self):
         # 教研室主任审核通过
         self.state = 'unexamined_dean'
-        if self.env.user.id != self.TARO_id.id:
-            raise ValidationError("只有教研室主任才能审批")
+        # if self.env.user.id != self.taro_id.id:
+        #     raise ValidationError("只有教研室主任才能审批")
         self.state = 'unexamined_dean'
 
 
     @api.multi
-    def action_examine_TARO_reject(self):
+    def action_examine_taro_reject(self):
         # 教研室主任审核驳回
         self.state = 'unexamined_dean'
-        if self.env.user.id != self.TARO_id.id:
-            raise ValidationError("只有教研室主任才能审批")
+        # if self.env.user.id != self.taro_id.id:
+        #     raise ValidationError("只有教研室主任才能审批")
         self.state = 'draft'
 
     @api.multi
     def action_examine_dean_permit(self):
         # 院长审批通过
-        if self.env.user.id != self.dean_id.id:
-            raise ValidationError("只有院长才能审批")
+        # if self.env.user.id != self.dean_id.id:
+        #     raise ValidationError("只有院长才能审批")
         self.state = 'passed'
 
     @api.multi
     def action_examine_dean_reject(self):
         # 院长审批驳回
-        if self.env.user.id != self.dean_id.id:
-            raise ValidationError("只有院长才能审批")
+        # if self.env.user.id != self.dean_id.id:
+        #     raise ValidationError("只有院长才能审批")
         self.state = 'draft'
+    #
+    # @api.multi
+    # def create(self, default=None):
+    #     pass
 
     @api.multi
     def copy(self, default=None):
