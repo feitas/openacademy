@@ -105,6 +105,34 @@
             </field>
         </record>
 
+        <!--普通用户可以查看授课计划-->
+        <record id="all_can_see_Course_plan" model="ir.rule">
+            <field name="name">all can see course plans</field>
+            <field name="model_id" ref="model_openacademy_course_plan"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                []
+            </field>
+        </record>
+
+        <!--普通用户可以查看授课记录-->
+        <record id="all_can_see_Course_plan" model="ir.rule">
+            <field name="name">all can see course logs</field>
+            <field name="model_id" ref="model_openacademy_session_course_log"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="0"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">
+                []
+            </field>
+        </record>
+
         <!--<record id="taro_can_modify_Course" model="ir.rule">
             <field name="name">taro can modify Course</field>
             <field name="model_id" ref="model_openacademy_course"/>

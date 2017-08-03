@@ -43,12 +43,16 @@
                         <group>
                             <group>
                                 <field name="name"/>
-                                <field name="responsible_id"/>
+                                <field name="responsible_id" domain="[]" options="{'no_create':True,'no_open':True}" context="{'tree_view_ref':'kw_tsh_project.view_project_project_search_tree','form_view_ref':'kw_tsh_project.view_project_project_search_form'}"/>
                                 <field name="current_user"/>
+                                <field name="max_hour_perday"/>
+                                <field name="plan_ids"/>
                             </group>
                             <group>
-                                <field name="taro_id"/>
-                                <field name="dean_id"/>
+                                <!--主任-->
+                                <field name="taro_id" domain="[('id','&lt;',10)]" options="{'no_create':True,'no_open':True}" context="{'tree_view_ref':'kw_tsh_project.view_project_project_search_tree','form_view_ref':'kw_tsh_project.view_project_project_search_form'}"/>
+                                <!--院长-->
+                                <field name="dean_id" domain="[]"/>
                             </group>
                         </group>
                         <notebook>
@@ -149,6 +153,7 @@
                         </group>
                         <label for="attendee_ids"/>
                         <field name="attendee_ids"/>
+                        <field name="course_log_ids"/>
                     </sheet>
                     <div class="oe_chatter">
                         <field name="message_follower_ids" widget="mail_followers"/>

@@ -7,6 +7,19 @@ from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
+# 授课计划
+class Course_plan(models.Model):
+    _name = 'openacademy.course.plan'
+    name = fields.Char(string="内容", required=True)
+    sequence = fields.Integer(string="节次", default=1)
+    plan_type = fields.Selection([
+        ('theory',"理论"),
+        ('exercise',"实操"),
+        ('exam',"考试"),
+    ], string="类型")
+    hours = fields.Integer(string="课时")
+    course = fields.Many2one('openacademy.course', string="课程")
+
 # 课程
 class Course(models.Model):
     _name = 'openacademy.course'
@@ -21,10 +34,25 @@ class Course(models.Model):
     # 当前登录用户
     current_user = fields.Integer(default = 0, compute = 'who')
 
+    max_hour_perday = fields.Integer(string="每日最大课时", default=2)
+    plan_ids = fields.One2many('openacademy.course.plan', 'course', string="授课计划")
+
     def who(self):
         pass
-        # _logger.info("user-----")
-        # _logger.info(self.env.user)
+        _logger.info("----plan_ids----")
+        _logger.info(self.plan_ids)
+
+        # mail_dict = {
+        #     'subject': "开课通知",
+        #     'author_id': self.env.user.id,
+        #     'email_from': "	Administrator <zhao_yc@126.com>",
+        #     'email_to': "1060737113@qq.com",
+        #     'body_html': "<p>你好，感谢参加课程%s</p>" % ("lol")
+        # }
+        # mail = self.env['mail.mail'].sudo().create(mail_dict)
+        # mail.send()
+
+        # _logger.info(self.env['mail.mail'].browse(108).body_html)
         # _logger.info("---------uid:" + str(self.env.uid))
         # for r in self:
         #     _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
@@ -84,6 +112,11 @@ class Course(models.Model):
         # if self.env.user.id != self.dean_id.id:
         #     raise ValidationError("只有院长才能审批")
         self.state = 'passed'
+        values = {
+            'name': self.name,
+            'type': 'service'
+        }
+        self.env['product.product'].sudo().create(values)
 
     @api.multi
     def action_examine_dean_reject(self):
@@ -91,10 +124,7 @@ class Course(models.Model):
         # if self.env.user.id != self.dean_id.id:
         #     raise ValidationError("只有院长才能审批")
         self.state = 'draft'
-    #
-    # @api.multi
-    # def create(self, default=None):
-    #     pass
+
 
     @api.multi
     def copy(self, default=None):
@@ -111,6 +141,7 @@ class Course(models.Model):
         default['name'] = new_name
         return super(Course, self).copy(default)
 
+
     # 不符合限制条件时阻止操作并给出警告
     _sql_constraints = [
         ('name_description_check',
@@ -122,7 +153,7 @@ class Course(models.Model):
          "科目名重复"),
     ]
 
-# 学期
+# 开课
 class Session(models.Model):
     _name = 'openacademy.session'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
@@ -163,6 +194,28 @@ class Session(models.Model):
         ('confirmed', "已确认"),
         ('done', "完成"),
     ])
+    course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="开课记录")
+
+    @api.model
+    def create(self, values):
+        # 重写create方法
+        # plans = self.course_id.plan_ids
+        # return super(Course, self).create({'course_log_ids':plans})
+        _logger.info('----------22222222---------')
+        _logger.info(values['course_id'])
+        # _logger.info(values['course_id'].plan_ids)
+        # _logger.info(self.env['openacademy.course'].browse(values['course_id']).plan_ids)
+        plans = self.env['openacademy.course'].browse(values['course_id']).plan_ids
+        session = super(Session, self).create(values)
+        for plan in plans:
+            value = {
+                'name': plan.name,
+                'session': session.id
+            }
+            self.env['openacademy.session.course.log'].create(value)
+
+        return session
+
 
     # 设置状态：draft confirmed done
     @api.multi
@@ -174,6 +227,38 @@ class Session(models.Model):
     def action_confirm(self):
         # 学期的状态设为confirmed
         self.state = 'confirmed'
+        # _logger.info(self.course_id.id)
+        course_name = self.course_id.name
+        # _logger.info('-------course_name:' + str(course_name))
+        product = self.env['product.product'].sudo().search([('name', '=', course_name)])
+        # _logger.info(product)
+        for attendee_id in self.attendee_ids:
+            # self.env['res.partner']
+            # _logger.info(attendee_id.id)
+            sale_order = self.env['sale.order'].sudo().create({'partner_id': attendee_id.id})
+            # _logger.info(sale_order)
+            # _logger.info('-------******-------')
+            line_values = {
+                'product_id': product.id,
+                'subject': product.name,
+                'price_unit': product.list_price,
+                # 'product_uom_qty': qty,
+                'order_id': sale_order.id
+            }
+            # tax_id
+            # _logger.info(line_values)
+            self.env['sale.order.line'].sudo().create(line_values)
+            sale_order.state = 'sale'
+
+            mail_dict = {
+                'subject': "开课通知",
+                'author_id': self.env.user.id,
+                'email_from': "	Administrator <zhao_yc@126.com>",
+                'email_to': attendee_id.email,
+                'body_html': u"<p>你好，感谢参加课程%s！</p>" % (course_name)
+            }
+            mail = self.env['mail.mail'].sudo().create(mail_dict)
+            mail.send()
 
     @api.multi
     def action_done(self):
@@ -259,3 +344,10 @@ class Session(models.Model):
             # 导师不能同时是这个课的学生
             if r.instructor_id and r.instructor_id in r.attendee_ids:
                 raise ValidationError("教导员不能同时是参与者")
+
+# 班级授课记录
+class Session_course_log(models.Model):
+    _name = 'openacademy.session.course.log'
+    date = fields.Date(string="日期")
+    name = fields.Char(string="内容")
+    session = fields.Many2one('openacademy.session')
