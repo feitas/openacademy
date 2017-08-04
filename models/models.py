@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
-
 import logging
 from datetime import timedelta
+
 from odoo import models, fields, api, exceptions
 from odoo.exceptions import ValidationError
 
+
 _logger = logging.getLogger(__name__)
+
 
 # 授课计划
 class Course_plan(models.Model):
     _name = 'openacademy.course.plan'
+
+
     name = fields.Char(string="内容", required=True)
     sequence = fields.Integer(string="节次", default=1)
     plan_type = fields.Selection([
@@ -19,6 +23,7 @@ class Course_plan(models.Model):
     ], string="类型")
     hours = fields.Integer(string="课时")
     course = fields.Many2one('openacademy.course', string="课程")
+
 
 # 课程
 class Course(models.Model):
@@ -32,7 +37,7 @@ class Course(models.Model):
     dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True, required=True)
     
     # 当前登录用户
-    current_user = fields.Integer(default = 0, compute = 'who')
+    current_user = fields.Integer(default = 0, compute='who')
 
     max_hour_perday = fields.Integer(string="每日最大课时", default=2)
     plan_ids = fields.One2many('openacademy.course.plan', 'course', string="授课计划")
@@ -153,6 +158,7 @@ class Course(models.Model):
          "科目名重复"),
     ]
 
+
 # 开课
 class Session(models.Model):
     _name = 'openacademy.session'
@@ -196,6 +202,7 @@ class Session(models.Model):
     ])
     course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="开课记录")
 
+
     @api.model
     def create(self, values):
         # 重写create方法
@@ -225,6 +232,10 @@ class Session(models.Model):
 
     @api.multi
     def action_confirm(self):
+        """
+        TODO: 整个方法的功能在此进行描述
+
+        """
         # 学期的状态设为confirmed
         self.state = 'confirmed'
         # _logger.info(self.course_id.id)
@@ -238,6 +249,7 @@ class Session(models.Model):
             sale_order = self.env['sale.order'].sudo().create({'partner_id': attendee_id.id})
             # _logger.info(sale_order)
             # _logger.info('-------******-------')
+            # TODO: sale.order.line对象中没有subject字段
             line_values = {
                 'product_id': product.id,
                 'subject': product.name,
@@ -248,6 +260,7 @@ class Session(models.Model):
             # tax_id
             # _logger.info(line_values)
             self.env['sale.order.line'].sudo().create(line_values)
+            # TODO: 销售订单直接改状态这种方式是不可以的。复杂的单据一般有一定的业务逻辑
             sale_order.state = 'sale'
 
             mail_dict = {
@@ -348,6 +361,9 @@ class Session(models.Model):
 # 班级授课记录
 class Session_course_log(models.Model):
     _name = 'openacademy.session.course.log'
+
     date = fields.Date(string="日期")
     name = fields.Char(string="内容")
+    # TODO: many2one类型的字段命名必须用_id为后缀，例如 session_id, 同样，one2many类型的字段要用_ids为后缀
+    # TODO: 没有string属性
     session = fields.Many2one('openacademy.session')
