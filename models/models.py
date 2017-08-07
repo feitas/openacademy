@@ -200,8 +200,21 @@ class Session(models.Model):
         ('confirmed', "已确认"),
         ('done', "完成"),
     ])
-    course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="开课记录")
+    course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="授课记录")
+    # 关联的销售订单
+    sale_order_count = fields.Integer(string='订单数', compute='compute_sale_order_count')
+    # sale_order_count = fields.Integer(string='订单数')
 
+
+    @api.multi
+    def compute_sale_order_count(self):
+        '''
+        计算关联的订单数
+        '''
+        sale_orders = self.env['sale.order'].sudo().search([('partner_id', 'in', [attendee_id.id for attendee_id in self.attendee_ids]), ('product_id', '=', self.course_id.name)])
+        # _logger.info('----------------------------886')
+        # _logger.info(len(sale_orders))
+        self.sale_order_count = len(sale_orders)
 
     @api.model
     def create(self, values):
@@ -233,10 +246,8 @@ class Session(models.Model):
     @api.multi
     def action_confirm(self):
         """
-        TODO: 整个方法的功能在此进行描述
-
+        开课状态设为confirmed，确认开课
         """
-        # 学期的状态设为confirmed
         self.state = 'confirmed'
         # _logger.info(self.course_id.id)
         course_name = self.course_id.name
@@ -249,10 +260,8 @@ class Session(models.Model):
             sale_order = self.env['sale.order'].sudo().create({'partner_id': attendee_id.id})
             # _logger.info(sale_order)
             # _logger.info('-------******-------')
-            # TODO: sale.order.line对象中没有subject字段
             line_values = {
                 'product_id': product.id,
-                'subject': product.name,
                 'price_unit': product.list_price,
                 # 'product_uom_qty': qty,
                 'order_id': sale_order.id
@@ -303,7 +312,7 @@ class Session(models.Model):
                 'warning': {
                     'title': "Too many attendees",
                     # 翻译--改po文件无效
-                    'message': _("Increase seats or remove excess attendees"),
+                    'message': "Increase seats or remove excess attendees",
                 },
             }
 
@@ -350,6 +359,24 @@ class Session(models.Model):
         # 计算参与人数
         for r in self:
             r.attendees_count = len(r.attendee_ids)
+
+    # @api.multi
+    def to_related_sale_orders(self):
+        # 以下两行错误，要用sale.order的视图
+        # tree_id = self.env.ref('openacademy.session_tree_view').id
+        # form_id = self.env.ref('openacademy.session_form_view').id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'see orders',
+            'view_type': 'form',
+            'view_mode': 'tree,form',
+            'res_model': 'sale.order',
+            #注意此处m2m字段attendee_ids的用法
+            'domain': str([('partner_id', 'in', [attendee_id.id for attendee_id in self.attendee_ids]), ('product_id', '=', self.course_id.name)]),
+            # 'domain': str([('id', 'in', values)]),
+            # 'views': [(tree_id, 'tree'), (form_id, 'form')],
+            # 'search_view_id': search_id,
+        }
 
     @api.constrains('instructor_id', 'attendee_ids')
     def _check_instructor_not_in_attendees(self):
