@@ -200,7 +200,7 @@ class Session(models.Model):
         ('confirmed', "已确认"),
         ('done', "完成"),
     ])
-    course_log_ids = fields.One2many('openacademy.session.course.log', 'session_id', string="授课记录")
+    course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="授课记录")
     # 关联的销售订单
     sale_order_count = fields.Integer(string='订单数', compute='compute_sale_order_count')
     # sale_order_count = fields.Integer(string='订单数')
@@ -392,4 +392,4 @@ class Session_course_log(models.Model):
     date = fields.Date(string="日期")
     name = fields.Char(string="内容")
     # many2one类型的字段命名必须用_id为后缀，例如 session_id, 同样，one2many类型的字段要用_ids为后缀
-    session_id = fields.Many2one('openacademy.session', string="开课session")
+    session = fields.Many2one('openacademy.session', string="开课session")

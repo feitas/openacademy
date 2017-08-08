@@ -25,7 +25,7 @@
 
     # any module necessary for this one to work correctly
     # board是仪表板
-    'depends': ['base', 'board', 'mail'],
+    'depends': ['base', 'board', 'mail', 'report'],
 
     # always loaded
     'data': [
