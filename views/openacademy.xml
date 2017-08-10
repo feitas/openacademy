@@ -43,11 +43,15 @@
                         <group>
                             <group>
                                 <field name="name"/>
+                                <field name="type"/>
                                 <field name="responsible_id" domain="[]" options="{'no_create':True,'no_open':True}" context="{'tree_view_ref':'kw_tsh_project.view_project_project_search_tree','form_view_ref':'kw_tsh_project.view_project_project_search_form'}"/>
                                 <field name="current_user"/>
                                 <field name="max_hour_perday"/>
                             </group>
                             <group>
+                                <field name="total_hours"/>
+                                <field name="lesson_hours"/>
+                                <field name="exercise_hours"/>
                                 <!--主任-->
                                 <field name="taro_id" domain="[('id','&lt;',10)]" options="{'no_create':True,'no_open':True}" context="{'tree_view_ref':'kw_tsh_project.view_project_project_search_tree','form_view_ref':'kw_tsh_project.view_project_project_search_form'}"/>
                                 <!--院长-->
@@ -82,11 +86,13 @@
             <field name="arch" type="xml">
                 <search>
                     <field name="name"/>
-                    <field name="description"/>
+                    <field name="responsible_id"/>
                     <!--<filter name="my_courses" string="我的课程"
                             domain="[('responsible_id', '=', uid)]"/>-->
-                    <group string="Group By">
-                        <filter name="by_responsible" string="Responsible"
+                    <group string="分组">
+                        <filter name="by_type" string="类型"
+                                context="{'group_by': 'type'}"/>
+                        <filter name="by_responsible" string="责任人"
                                 context="{'group_by': 'responsible_id'}"/>
                     </group>
                 </search>
@@ -113,7 +119,7 @@
             web_icon="openacademy,static/description/icon.png"/>
         <!-- A first level in the left side menu is needed
              before using action= attribute -->
-        <menuitem id="openacademy_menu" name="Open Academy"
+        <menuitem id="openacademy_menu" name="教务"
                   parent="main_openacademy_menu"/>
         <!-- the following menuitem should appear *after*
              its parent openacademy_menu and *after* its

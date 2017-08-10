@@ -31,8 +31,16 @@ class Course(models.Model):
 
     name = fields.Char(string="名称", required=True)
     description = fields.Html(string="简介")
-    # 责任人
-    responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True)
+    # 责任人 注意lambda用法
+    responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True, default=lambda self: self.env.user.id, required=True)
+    type = fields.Selection([
+        ('i',"理论"),
+        ('e',"实操"),
+        ('both',"理论+实操")
+    ], string="类型", default='both', required=True)
+    total_hours = fields.Float(string="总课时", compute='compute_total_hours', required=True)
+    lesson_hours = fields.Float(string="理论课时", required=True)
+    exercise_hours = fields.Integer(string="实操课时", required=True)
     taro_id = fields.Many2one('res.users', ondelete='set null', string="教研室主任", index=True, required=True)
     dean_id = fields.Many2one('res.users', ondelete='set null', string="院长", index=True, required=True)
     
@@ -43,38 +51,8 @@ class Course(models.Model):
     plan_ids = fields.One2many('openacademy.course.plan', 'course', string="授课计划")
 
     def who(self):
-        pass
         _logger.info("----plan_ids----")
         _logger.info(self.plan_ids)
-
-        # mail_dict = {
-        #     'subject': "开课通知",
-        #     'author_id': self.env.user.id,
-        #     'email_from': "	Administrator <zhao_yc@126.com>",
-        #     'email_to': "1060737113@qq.com",
-        #     'body_html': "<p>你好，感谢参加课程%s</p>" % ("lol")
-        # }
-        # mail = self.env['mail.mail'].sudo().create(mail_dict)
-        # mail.send()
-
-        # _logger.info(self.env['mail.mail'].browse(108).body_html)
-        # _logger.info("---------uid:" + str(self.env.uid))
-        # for r in self:
-        #     _logger.info("---------------r.responsible_id.id:" + str(r.responsible_id.id))
-        #     _logger.info(r.current_user)
-        #     # 用户是课程负责人
-        #     if r.responsible_id.id == self.env.uid and self.env.uid != 1:
-        #         r.current_user = 1
-        #     # elif r.responsible_id.id == self.env.uid and self.env.uid == 1:
-        #     #     r.current_user = 4
-        #     # 教研室主任登录
-        #     elif self.env.user.partner_id.position == "taro":
-        #         r.current_user = 2
-        #     # 院长登录
-        #     elif self.env.user.partner_id.position == "dean":
-        #         r.current_user = 3
-
-        # _logger.info("---------current_user:" + str(current_user))
 
     state = fields.Selection([
         ('draft', "草稿"),
@@ -82,6 +60,40 @@ class Course(models.Model):
         ('unexamined_dean', "待院长审批"),
         ('passed', "审批通过")
     ], default = 'draft')
+
+    @api.onchange('lesson_hours', 'exercise_hours')
+    def compute_total_hours(self):
+        # 计算总课时
+        self.total_hours = self.lesson_hours + self.exercise_hours
+
+    # @api.one
+    # @api.constrains('responsible_id')
+    # def _check_exercise_hours(self):
+    #     _logger.info('-------------------')
+    #     _logger.info(self.env['openacademy.course'].search([('responsible_id.id', '=', self.responsible_id.id)]))
+    #     if len(self.env['openacademy.course'].search([('responsible_id.id', '=', self.responsible_id.id)])) > 3:
+    #         raise ValidationError("课程责任人负责的科目不允许多于3个。")
+
+    @api.constrains('lesson_hours', 'exercise_hours', 'responsible_id')
+    def _check_exercise_hours(self):
+        # 限制：实操课时必须是3或4的倍数
+        for r in self:
+            if r.exercise_hours % 3 != 0 and r.exercise_hours % 4 != 0:
+                raise ValidationError("实操课时必须是3或4的倍数。")
+            cr_responsible_courses = self.env['openacademy.course'].search([('responsible_id.id', '=', self.responsible_id.id)])
+            if len(cr_responsible_courses) > 3:
+                raise ValidationError("课程责任人负责的科目不允许多于3个。")
+            total_hours = 0
+            lesson_hours = 0
+            for course in cr_responsible_courses:
+                # _logger.info(course)
+                # _logger.info(course[0])
+                total_hours += course[0].total_hours
+                lesson_hours += course[0].lesson_hours
+            if total_hours > 200:
+                raise ValidationError("责任人负责课程的总课时不能大于200")
+            if lesson_hours > 100:
+                raise ValidationError("责任人负责课程的理论课时之和不能超过100")
 
     @api.multi
     def action_submit_for_examine(self):
