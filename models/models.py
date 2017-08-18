@@ -29,10 +29,11 @@ class Course_plan(models.Model):
 class Course(models.Model):
     _name = 'openacademy.course'
 
+
     name = fields.Char(string="名称", required=True)
     description = fields.Html(string="简介")
     # 责任人 注意lambda用法
-    responsible_id = fields.Many2one('res.users', ondelete='set null', string="责任人", index=True, default=lambda self: self.env.user.id, required=True)
+    responsible_id = fields.Many2one('res.users', ondelete='set null', string="负责人", index=True, default=lambda self: self.env.user.id, required=True)
     type = fields.Selection([
         ('i',"理论"),
         ('e',"实操"),
@@ -176,12 +177,14 @@ class Session(models.Model):
     _name = 'openacademy.session'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
 
+
     name = fields.Char(string="名称", required=True)
-    start_date = fields.Date(string="开始日期", default=fields.Date.today)
+    sequence = fields.Integer(string="编号", default=1)
+    start_date = fields.Date(string="开始日期", default=fields.Date.today, required=True)
     # 持续天数
     duration = fields.Float(digits=(6, 2), string="持续天数")
     # 座位数
-    seats = fields.Integer(string="座位数")
+    seats = fields.Integer(string="座位数", required=True)
     active = fields.Boolean(string="有效", default=True)
     color = fields.Integer()
     # 教导员
@@ -189,9 +192,9 @@ class Session(models.Model):
         domain=['|', ('instructor', '=', True),
                      ('category_id.name', 'ilike', "Teacher")])
 
-    # instructor_id = fields.Many2one('res.partner', string="Instructor")
     # 学科
     course_id = fields.Many2one('openacademy.course',
+                                domain=[('state','=','passed')],
         ondelete='cascade', string="科目", required=True)
     # 参与者
     attendee_ids = fields.Many2many('res.partner', string="参与者")
@@ -230,13 +233,9 @@ class Session(models.Model):
 
     @api.model
     def create(self, values):
-        # 重写create方法
-        # plans = self.course_id.plan_ids
-        # return super(Course, self).create({'course_log_ids':plans})
-        _logger.info('----------22222222---------')
-        _logger.info(values['course_id'])
-        # _logger.info(values['course_id'].plan_ids)
-        # _logger.info(self.env['openacademy.course'].browse(values['course_id']).plan_ids)
+        '''
+        重写create方法
+        '''
         plans = self.env['openacademy.course'].browse(values['course_id']).plan_ids
         session = super(Session, self).create(values)
         for plan in plans:
@@ -261,25 +260,15 @@ class Session(models.Model):
         开课状态设为confirmed，确认开课
         """
         self.state = 'confirmed'
-        # _logger.info(self.course_id.id)
         course_name = self.course_id.name
-        # _logger.info('-------course_name:' + str(course_name))
         product = self.env['product.product'].sudo().search([('name', '=', course_name)])
-        # _logger.info(product)
         for attendee_id in self.attendee_ids:
-            # self.env['res.partner']
-            # _logger.info(attendee_id.id)
             sale_order = self.env['sale.order'].sudo().create({'partner_id': attendee_id.id})
-            # _logger.info(sale_order)
-            # _logger.info('-------******-------')
             line_values = {
                 'product_id': product.id,
                 'price_unit': product.list_price,
-                # 'product_uom_qty': qty,
                 'order_id': sale_order.id
             }
-            # tax_id
-            # _logger.info(line_values)
             self.env['sale.order.line'].sudo().create(line_values)
             # TODO: 销售订单直接改状态这种方式是不可以的。复杂的单据一般有一定的业务逻辑
             sale_order.state = 'sale'
@@ -308,7 +297,6 @@ class Session(models.Model):
             else:
                 r.taken_seats = 100.0 * len(r.attendee_ids) / r.seats
 
-    # 'seats'和'attendee_ids'变化时执行
     @api.onchange('seats', 'attendee_ids')
     def _verify_valid_seats(self):
         # 特定条件下显示警告
@@ -323,7 +311,6 @@ class Session(models.Model):
             return {
                 'warning': {
                     'title': "Too many attendees",
-                    # 翻译--改po文件无效
                     'message': "Increase seats or remove excess attendees",
                 },
             }
@@ -374,9 +361,6 @@ class Session(models.Model):
 
     # @api.multi
     def to_related_sale_orders(self):
-        # 以下两行错误，要用sale.order的视图
-        # tree_id = self.env.ref('openacademy.session_tree_view').id
-        # form_id = self.env.ref('openacademy.session_form_view').id
         return {
             'type': 'ir.actions.act_window',
             'name': 'see orders',
@@ -385,9 +369,6 @@ class Session(models.Model):
             'res_model': 'sale.order',
             #注意此处m2m字段attendee_ids的用法
             'domain': str([('partner_id', 'in', [attendee_id.id for attendee_id in self.attendee_ids]), ('product_id', '=', self.course_id.name)]),
-            # 'domain': str([('id', 'in', values)]),
-            # 'views': [(tree_id, 'tree'), (form_id, 'form')],
-            # 'search_view_id': search_id,
         }
 
     @api.constrains('instructor_id', 'attendee_ids')
@@ -400,6 +381,7 @@ class Session(models.Model):
 # 班级授课记录
 class Session_course_log(models.Model):
     _name = 'openacademy.session.course.log'
+
 
     date = fields.Date(string="日期")
     name = fields.Char(string="内容")
