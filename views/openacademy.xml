@@ -11,7 +11,7 @@
             <field name="res_model">openacademy.course</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
-            <!--<field name="context" eval="{'search_default_my_courses': 1}"/>-->
+            <field name="context" eval="{}"/>
             <field name="help" type="html">
                 <p class="oe_view_nocontent_create">Create the first course
                 </p>
@@ -34,9 +34,15 @@
                         <field name="state" widget="statusbar"/>
                     </header>
                     <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="to_related_sessions" type="object" class="oe_stat_button">
+                                <field name="related_sessions_count" widget="statinfo"/>
+                            </button>
+                        </div>
                         <group>
                             <group>
                                 <field name="name"/>
+                                <field name="code"/>
                                 <field name="type"/>
                                 <field name="responsible_id" domain="[]" options="{'no_create':True,'no_open':True}" context="{'tree_view_ref':'kw_tsh_project.view_project_project_search_tree','form_view_ref':'kw_tsh_project.view_project_project_search_form'}"/>
                                 <field name="current_user"/>
@@ -53,9 +59,17 @@
                             </group>
                         </group>
                         <notebook>
+                            <page string="开课记录">
+                                <field name="session_ids" readonly="1">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="start_date"/>
+                                    </tree>
+                                </field>
+                            </page>
                             <page string="授课计划">
                                 <field name="plan_ids">
-                                    <tree string="授课计划" editable="bottom">
+                                    <tree editable="bottom">
                                         <field name="name"/>
                                         <field name="sequence"/>
                                         <field name="plan_type"/>
@@ -292,7 +306,7 @@
                                 <div t-attf-class="oe_kanban_content">
                                     <!-- title -->
                                     编号:
-                                    <field name="sequence"/>
+                                    <field name="name"/>
                                     <br/>
                                     开始日期:
                                     <field name="start_date"/>

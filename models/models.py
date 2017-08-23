@@ -50,6 +50,11 @@ class Course(models.Model):
 
     max_hour_perday = fields.Integer(string="每日最大课时", default=2)
     plan_ids = fields.One2many('openacademy.course.plan', 'course', string="授课计划")
+    session_ids = fields.One2many('openacademy.session', 'course_id', string="开课记录")
+    # 关联的销售订单
+    related_sessions_count = fields.Integer(string='开课记录', compute='compute_related_sessions_count')
+    code = fields.Char(string="编码", required=True)
+
 
     def who(self):
         _logger.info("----plan_ids----")
@@ -67,13 +72,24 @@ class Course(models.Model):
         # 计算总课时
         self.total_hours = self.lesson_hours + self.exercise_hours
 
-    # @api.one
-    # @api.constrains('responsible_id')
-    # def _check_exercise_hours(self):
-    #     _logger.info('-------------------')
-    #     _logger.info(self.env['openacademy.course'].search([('responsible_id.id', '=', self.responsible_id.id)]))
-    #     if len(self.env['openacademy.course'].search([('responsible_id.id', '=', self.responsible_id.id)])) > 3:
-    #         raise ValidationError("课程责任人负责的科目不允许多于3个。")
+    @api.multi
+    def compute_related_sessions_count(self):
+        '''
+        计算关联的开课记录数目
+        '''
+        sessions = self.env['openacademy.session'].sudo().search([('course_id','=',self.id)])
+        self.related_sessions_count = len(sessions)
+
+    def to_related_sessions(self):
+        '''点击按钮查看关联的开课记录'''
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'see related sessions',
+            'view_type': 'form',
+            'view_mode': 'tree,form',
+            'res_model': 'openacademy.session',
+            'domain': str([('course_id','=',self.id)]),
+        }
 
     @api.constrains('lesson_hours', 'exercise_hours', 'responsible_id')
     def _check_exercise_hours(self):
@@ -95,6 +111,21 @@ class Course(models.Model):
                 raise ValidationError("责任人负责课程的总课时不能大于200")
             if lesson_hours > 100:
                 raise ValidationError("责任人负责课程的理论课时之和不能超过100")
+
+    @api.constrains('code')
+    def _check_code(self):
+        for r in self:
+            code = r.code
+            has_chinese = False
+            print '----------552---'
+            # 不需要转码！！
+            # for ch in code.decode('utf-8'):
+            for ch in code:
+                if u'\u4e00' <= ch <= u'\u9fff':
+                    has_chinese = True
+                    break
+            if len(code) != 2 or r.code.upper() != code or has_chinese:
+                raise ValidationError('编码必须为两个大写英文字母')
 
     @api.multi
     def action_submit_for_examine(self):
@@ -169,6 +200,10 @@ class Course(models.Model):
         ('name_unique',
          'UNIQUE(name)',
          "科目名重复"),
+
+        ('code_unique',
+         'UNIQUE(code)',
+         "编码重复"),
     ]
 
 
@@ -178,8 +213,8 @@ class Session(models.Model):
     _inherit = ['mail.thread', 'ir.needaction_mixin']
 
 
-    name = fields.Char(string="名称", required=True)
-    sequence = fields.Integer(string="编号", default=1)
+    name = fields.Char(string="编号", readonly=True)
+    # sequence = fields.Integer(string="编号", index=True, default=1)
     start_date = fields.Date(string="开始日期", default=fields.Date.today, required=True)
     # 持续天数
     duration = fields.Float(digits=(6, 2), string="持续天数")
@@ -218,7 +253,6 @@ class Session(models.Model):
     course_log_ids = fields.One2many('openacademy.session.course.log', 'session', string="授课记录")
     # 关联的销售订单
     sale_order_count = fields.Integer(string='订单数', compute='compute_sale_order_count')
-    # sale_order_count = fields.Integer(string='订单数')
 
 
     @api.multi
@@ -237,13 +271,20 @@ class Session(models.Model):
         重写create方法
         '''
         plans = self.env['openacademy.course'].browse(values['course_id']).plan_ids
-        session = super(Session, self).create(values)
         for plan in plans:
             value = {
                 'name': plan.name,
-                'session': session.id
+                'session': self.id
             }
             self.env['openacademy.session.course.log'].create(value)
+        print '------------------111---'
+        print values.get('name', 'New')
+        # TODO：这里为啥等于False
+        # if values.get('name', 'New') == 'New':
+        #     values['name'] = self.env['ir.sequence'].next_by_code('openacademy.session') or '/'
+        values['name'] = self.env['openacademy.course'].browse(values.get('course_id')).code + '-' + self.env['ir.sequence'].next_by_code('openacademy.session') or ''
+
+        session = super(Session, self).create(values)
 
         return session
 

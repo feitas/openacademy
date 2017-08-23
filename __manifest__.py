@@ -38,7 +38,8 @@
         'views/session_board.xml',
         'views/openacademy_views.xml',
         'reports.xml',
-        'data/data.xml'
+        'data/data.xml',
+        'data/ir_sequence_data.xml'
     ],
     # only loaded in demonstration mode
     'demo': [
