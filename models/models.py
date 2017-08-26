@@ -158,8 +158,6 @@ class Course(models.Model):
     @api.multi
     def action_examine_dean_permit(self):
         # 院长审批通过
-        # if self.env.user.id != self.dean_id.id:
-        #     raise ValidationError("只有院长才能审批")
         self.state = 'passed'
         values = {
             'name': self.name,
@@ -170,8 +168,6 @@ class Course(models.Model):
     @api.multi
     def action_examine_dean_reject(self):
         # 院长审批驳回
-        # if self.env.user.id != self.dean_id.id:
-        #     raise ValidationError("只有院长才能审批")
         self.state = 'draft'
 
 
@@ -244,6 +240,7 @@ class Session(models.Model):
     # 已参加/预约人数
     attendees_count = fields.Integer(
         string="已参加人数", compute='_get_attendees_count', store=True)
+    attendance_sheet_ids = fields.One2many('feitas.partner.course.log', 'session_id', string="考勤表")
 
     state = fields.Selection([
         ('draft', "草稿"),
@@ -428,3 +425,15 @@ class Session_course_log(models.Model):
     name = fields.Char(string="内容")
     # many2one类型的字段命名必须用_id为后缀，例如 session_id, 同样，one2many类型的字段要用_ids为后缀
     session = fields.Many2one('openacademy.session', string="开课session")
+
+
+#考勤表
+class Attendance_sheet(models.Model):
+    _name = 'feitas.partner.course.log'
+
+
+    name = fields.Char(string="编号", required=True)
+    session_id = fields.Many2one('openacademy.session', string="开课", required=True)
+    date = fields.Date(string="开始日期", default=fields.Date.today, required=True)
+    attend = fields.Boolean(string="参加")
+    partner_id = fields.Many2one('res.partner', string="学员", required=True)

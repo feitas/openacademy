@@ -31,6 +31,7 @@
                         <!--院长审批-->
                         <button string ="院长通过" type="object" name="action_examine_dean_permit" class="oe_highlight" states="unexamined_dean" groups="openacademy.group_manager"/>
                         <button string ="院长驳回" type="object" name="action_examine_dean_reject" class="oe_highlight" states="unexamined_dean" groups="openacademy.group_manager"/>
+                        <!--<button string="考勤表" type="object" name="action_attendance_sheet"/>-->
                         <field name="state" widget="statusbar"/>
                     </header>
                     <sheet>
@@ -165,7 +166,7 @@
                             </button>
                         </div>
                         <group>
-                            <group string="General">
+                            <group string="概览">
                                 <field name="course_id"/>
                                 <field name="name"/>
                                 <field name="instructor_id"/>
@@ -195,6 +196,15 @@
                                         <tree string="授课记录" editable="bottom">
                                             <field name="name"/>
                                             <field name="date"/>
+                                        </tree>
+                                    </field>
+                                </page>
+                                <page string="考勤表">
+                                    <field name="attendance_sheet_ids">
+                                        <tree editable="bottom">
+                                            <field name="partner_id"/>
+                                            <field name="date"/>
+                                            <field name="attend"/>
                                         </tree>
                                     </field>
                                 </page>
@@ -356,6 +366,33 @@
                     name="Add Attendees"
                     src_model="openacademy.session"
                     res_model="openacademy.wizard"
+                    view_mode="form"
+                    target="new"
+                    key2="client_action_multi"/>
+
+        <!--考勤表弹窗-->
+        <record model="ir.ui.view" id="wizard_form_view">
+            <field name="name">attendance.wizard.form</field>
+            <field name="model">openacademy.attendance.wizard</field>
+            <field name="arch" type="xml">
+                <form string="生成考勤表">
+                    <group>
+                        <field name="session_ids">
+                        </field>
+                    </group>
+                    <footer>
+                        <button name="save_sheets" type="object"
+                                string="生成" class="oe_highlight"/>
+                        <button special="cancel" string="取消"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <act_window id="openacademy_attendance_wizard"
+                    name="生成考勤表"
+                    src_model="openacademy.session"
+                    res_model="openacademy.attendance.wizard"
                     view_mode="form"
                     target="new"
                     key2="client_action_multi"/>

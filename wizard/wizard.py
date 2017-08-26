@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-
+import logging,json
 from odoo import models, fields, api
+
+
+_logger = logging.getLogger(__name__)
+
 
 class Wizard(models.TransientModel):
     _name = 'openacademy.wizard'
+
 
     def _default_sessions(self):
         # session_ids的默认值是触发当前wizard的openacademy.session
